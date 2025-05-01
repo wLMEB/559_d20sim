@@ -96,7 +96,7 @@ module testbench;
     // Testbench logic
     initial begin
         // Initialize memory
-        dut.init_memory();
+        $readmemb("bits.txt",dut.imem_inst.RAM);
 
         // Apply reset
         reset = 1;
@@ -106,25 +106,36 @@ module testbench;
         // Test case 1: mod = 5, target = 10
         mod = 5;
         target = 10;
-        #1000; // Wait for a few clock cycles
+        #100; // Wait for a few clock cycles
 
-        // // Test case 2: mod = -3, target = 0
-        // mod = -3;
-        // target = 0;
-        // #100;
+        reset = 1;
+        #10;
+        reset = 0;
 
-        // // Test case 3: mod = 0, target = 15
-        // mod = 0;
-        // target = 15;
-        // #100;
-
-        // // Test case 4: mod = 7, target = -5
-        // mod = 7;
-        // target = -5;
-        // #100;
-
+        // Test case 2: mod = -3, target = 0
+        mod = -3;
+        target = 0;
+        #100;
+        
+        reset = 1;
+        #10;
+        reset = 0;
+        // Test case 3: mod = 0, target = 15
+        mod = 0;
+        target = 15;
+        #100;
+        reset = 1;
+        #10;
+        reset = 0;
+        // Test case 4: mod = 7, target = -5
+        mod = 7;
+        target = -5;
+        #100;
+        reset = 1;
+        #10;
+        reset = 0;
         // End simulation
-        // $finish;
+        $finish;
     end
 
     // Monitor outputs

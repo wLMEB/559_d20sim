@@ -42,14 +42,14 @@ module top #(
     // task init_memory(input string file_name);
     // $readmemb(file_name, imem_inst.RAM);
 
-    task init_memory();
-        imem_inst.RAM[1] = 5'b00000;
-       imem_inst.RAM[1] = 5'b00001;
-       imem_inst.RAM[2] = 5'b00010;
-       imem_inst.RAM[3] = 5'b00011;
-       imem_inst.RAM[4] = 5'b00111;
-       imem_inst.RAM[5] = 5'b00101;
-    endtask
+    // task init_memory();
+    //     imem_inst.RAM[1] = 5'b00000;
+    //    imem_inst.RAM[1] = 5'b00001;
+    //    imem_inst.RAM[2] = 5'b00010;
+    //    imem_inst.RAM[3] = 5'b00011;
+    //    imem_inst.RAM[4] = 5'b00111;
+    //    imem_inst.RAM[5] = 5'b00101;
+    // endtask
 
     // Task to display memory contents
     // task display_memory();
@@ -76,38 +76,47 @@ module number #(
     logic signed [NUM_BITS-1:0] ran_8;
 
     logic valid_random; // Flag to indicate a valid random number
-initial begin
-    for (int i = 0; i < 6; i++) begin
-        $display("RAM[%0d] = %b", i, imem_inst.RAM[i]);
+    initial begin
+        pc = 0;
     end
-end
 always @(posedge clk or posedge reset) begin
     if (reset) begin
+        pc <= (pc + 1) % 32;
         random_num <= 0;
-        final_num <= 0;
-        hit <= 0;
+        valid_random <= 0;
+        
+        
     end else begin
         if (bits >= 1 && bits <= 20) begin
             random_num <= bits;
-            ran_8 <= signed'({3'b000, $signed(bits)});
-            final_num <= ran_8 + mod;
-            hit <= (final_num >= target) ? 1 : 0;
+            valid_random <= 1;
         end else begin
-            pc <= (pc + 1) % 32; // Increment the program counter
-            // $display("Time: %0t | pc: %0d | bits: %0d", $time, pc, bits);
+            pc <= (pc + 1) % 32;
+            valid_random <= 0;
         end
     end
-    
+    // $display("Time: %0t | pc: %0d", $time, pc);
+end
+
+always_comb begin
+    if (valid_random) begin
+        ran_8 = signed'({3'b000, $signed(random_num)});
+        final_num = ran_8 + mod;
+        hit = (final_num >= target) ? 1 : 0;
+    end else begin
+        final_num = 0;
+        hit = 0;
+    end
 end
 endmodule
 
-module imem #(
+(* dont_touch = "true" *)module imem #(
     parameter int NUM_GROUP = 32
 ) (
     input  logic [31:0] addr_i,
     output logic [4:0] data_o
 ); 
-    logic [4:0] RAM[NUM_GROUP-1:0];
+   (* dont_touch = "true" *) logic [4:0] RAM[NUM_GROUP-1:0] /* synthesis keep */;
 
     // always_comb begin
 
