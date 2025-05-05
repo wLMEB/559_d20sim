@@ -68,6 +68,7 @@ module testbench;
     // Testbench signals
     logic clk;
     logic reset;
+    logic next;
     logic signed [NUM_BITS-1:0] mod;
     logic signed [NUM_BITS-1:0] target;
     logic [4:0] random_num;
@@ -85,6 +86,7 @@ module testbench;
         .NUM_BITS(NUM_BITS)
     ) dut (
         .clk(clk),
+        .next(next),
         .reset(reset),
         .mod(mod),
         .target(target),
@@ -108,32 +110,32 @@ module testbench;
         target = 10;
         #100; // Wait for a few clock cycles
 
-        reset = 1;
+        next = 1;
         #10;
-        reset = 0;
+        next = 0;
 
         // Test case 2: mod = -3, target = 0
         mod = -3;
         target = 0;
         #100;
         
-        reset = 1;
+        next = 1;
         #10;
-        reset = 0;
+        next = 0;
         // Test case 3: mod = 0, target = 15
         mod = 0;
         target = 15;
         #100;
-        reset = 1;
+        next = 1;
         #10;
-        reset = 0;
+        next = 0;
         // Test case 4: mod = 7, target = -5
         mod = 7;
         target = -5;
         #100;
-        reset = 1;
+        next = 1;
         #10;
-        reset = 0;
+        next = 0;
         // End simulation
         $finish;
     end

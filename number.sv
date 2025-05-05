@@ -4,7 +4,8 @@ module top #(
     parameter NUM_BITS = 8
 ) (
     input logic clk, // Trigger for new random number
-    input logic reset,
+    input logic reset, 
+    input logic next, // Update next PC 
     input logic signed [NUM_BITS-1:0] mod, // Signed modifier
     input logic signed [NUM_BITS-1:0] target, // Target number for comparison
     output logic [4:0] random_num, // 5-bit random number (1 to 20)
@@ -21,6 +22,7 @@ module top #(
     ) number_inst (
         .clk(clk),
         .reset(reset),
+        .next(next),
         .bits(value),
         .mod(mod),
         .target(target),
@@ -38,23 +40,7 @@ module top #(
         .data_o(value)
     );
 
-    // Task to initialize memory
-    // task init_memory(input string file_name);
-    // $readmemb(file_name, imem_inst.RAM);
 
-    // task init_memory();
-    //     imem_inst.RAM[1] = 5'b00000;
-    //    imem_inst.RAM[1] = 5'b00001;
-    //    imem_inst.RAM[2] = 5'b00010;
-    //    imem_inst.RAM[3] = 5'b00011;
-    //    imem_inst.RAM[4] = 5'b00111;
-    //    imem_inst.RAM[5] = 5'b00101;
-    // endtask
-
-    // Task to display memory contents
-    // task display_memory();
-    //     imem_inst.display_memory();
-    // endtask
 
 endmodule
 
@@ -64,6 +50,7 @@ module number #(
 )(
     input logic clk, // Trigger for new random number
     input logic reset, // Reset signal
+    input logic next,   // Next PC
     input logic [4:0] bits, // 5-bit randomness
     input logic signed [NUM_BITS-1:0] mod, // Signed modifier
     input logic signed [NUM_BITS-1:0] target, // Target number for comparison
@@ -76,12 +63,11 @@ module number #(
     logic signed [NUM_BITS-1:0] ran_8;
 
     logic valid_random; // Flag to indicate a valid random number
-    initial begin
-        pc = 0;
-    end
+
 always @(posedge clk or posedge reset) begin
+    
     if (reset) begin
-        pc <= (pc + 1) % 32;
+        pc <= 0;
         random_num <= 0;
         valid_random <= 0;
         
@@ -94,8 +80,12 @@ always @(posedge clk or posedge reset) begin
             pc <= (pc + 1) % 32;
             valid_random <= 0;
         end
+        if (next) begin
+            pc <= (pc + 1) % 32;
+        end
+
     end
-    // $display("Time: %0t | pc: %0d", $time, pc);
+    
 end
 
 always_comb begin
@@ -110,24 +100,15 @@ always_comb begin
 end
 endmodule
 
-(* dont_touch = "true" *)module imem #(
+(* dont_touch = "true" *) module imem #(
     parameter int NUM_GROUP = 32
 ) (
     input  logic [31:0] addr_i,
     output logic [4:0] data_o
 ); 
-   (* dont_touch = "true" *) logic [4:0] RAM[NUM_GROUP-1:0] /* synthesis keep */;
-
-    // always_comb begin
-
+   (* syn_preserve = 1, syn_keep = 1, dont_touch = "true" *) reg [4:0] RAM[0:NUM_GROUP-1];
     assign data_o = RAM[addr_i % NUM_GROUP];
-    // end
-//   assign pc = (pc+1)%32;
-//   task display_memory();
-//         for (int i = 0; i < NUM_GROUP; i++) begin
-//             $display("RAM[%0d] = %b", i, RAM[i]);
-//         end
-//         $display("addr_i", addr_i);
-//           $display("data_o", data_o);
-//     endtask
+    always @(posedge addr_i[0]) begin
+        RAM[0] <=  5'b00001;
+    end
 endmodule  
