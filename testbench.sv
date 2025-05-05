@@ -1,63 +1,3 @@
-// `timescale 1ns/1ps
-
-// module testbench();
-
-//     parameter NUM_BITS = 8;
-//     logic clk;
-//     logic signed [NUM_BITS-1:0] mod;
-//     logic signed [NUM_BITS-1:0] target;
-//     logic [4:0] random_num;
-//     logic signed [NUM_BITS-1:0] final_num;
-//     logic hit;
-//     logic reset;
-    
-//     // Instantiate the module under test
-//     top # (
-//         .NUM_BITS(NUM_BITS)
-//     ) DUT (
-//         .random_num(random_num),
-//         .clk(clk),
-//         .reset(reset),
-//         .mod(mod),
-//         .final_num(final_num),
-//         .target(target),
-//         .hit(hit)
-//     );
-
-   
-
-//     // Clock generation
-//     always #10 clk = ~clk; // Generate a clock with a period of 10 time units
-
-//     initial begin
-//         clk = 0; // Initialize clock
-//         mod = 5; // Initialize modifier
-//         reset = 1;
-//         target = 10; // Set the target value for comparison
-//         #10 reset = 0;
-        
-
-
-//         // // Initialize memory using the task in the top module
-//         // $display("Initializing memory...");
-//         // DUT.init_memory("bits.txt");
-
-//         // // Display memory contents for debugging
-//         // $display("Displaying memory contents:");
-//         // DUT.display_memory(); // Call the task through the top module
-
-//         // Run the simulation for 10 clock cycles
-//         for (int i = 0; i < 100; i++) begin
-//             #10;
-//             $display("random_num = %d, mod = %d, final_num = %d, target = %d, hit = %d", 
-//                      random_num, mod, final_num, target, hit);
-//         end
-
-//         $finish; // End the simulation
-//     end
-
-// endmodule
-// Filepath: testing/rtl/test_number.sv
 `timescale 1ns/1ps
 
 module testbench;
@@ -69,17 +9,16 @@ module testbench;
     logic clk;
     logic reset;
     logic next;
+    logic write = 0;
+    logic [4:0] data;
+        logic [31:0] addr;
     logic signed [NUM_BITS-1:0] mod;
     logic signed [NUM_BITS-1:0] target;
     logic [4:0] random_num;
     logic signed [NUM_BITS-1:0] final_num;
     logic hit;
 
-    // Clock generation
-    initial begin
-        clk = 0;
-        forever #10 clk = ~clk; // 10ns clock period
-    end
+    reg [7:0] bits_mem[0:31];
 
     // DUT instantiation
     top #(
@@ -88,8 +27,11 @@ module testbench;
         .clk(clk),
         .next(next),
         .reset(reset),
+        .write(write),
         .mod(mod),
         .target(target),
+        .data(data),
+        .addr(addr),
         .random_num(random_num),
         .final_num(final_num),
         .hit(hit)
@@ -97,28 +39,61 @@ module testbench;
 
     // Testbench logic
     initial begin
-        // Initialize memory
-        $readmemb("bits.txt",dut.imem_inst.RAM);
+        clk = 0; // Initialize clock
+        mod = 0;
+        target = 0;
+        
+    
+        // Load memory
+        $readmemb("bits.txt", bits_mem);
+        //remeber to dumpfile for debugging
 
-        // Apply reset
+        $display("Contents of bits_mem:");
+        for (int i = 0; i < 32; i++) begin
+            $display("bits_mem[%0d] = %b", i, bits_mem[i]);
+        end 
+        $display("write is %d", write);
         reset = 1;
-        #10;
+        addr = 0;
+        
+        #100
         reset = 0;
+        write = 1;
+        // $display("write is 1");
+        // #100
+        // write = 0;
+        // $display("write is %d", write);
+        
+        #10000
 
-        // Test case 1: mod = 5, target = 10
+        // End simulation
+        $finish;
+    end
+
+    always #5 clk = ~clk;   // Generate clock
+
+
+    always @(negedge write) begin
+    // Test case 1: mod = 5, target = 10
+        if (! reset) begin
+        $display("neg write triggerd");
         mod = 5;
         target = 10;
         #100; // Wait for a few clock cycles
 
+        $display("Time: %0t | random_num: %0d | modifer: %0d | final_num: %0d | target: %0d| hit: %0b", 
+                 $time, random_num, mod,final_num, target, hit);
         next = 1;
         #10;
         next = 0;
+
 
         // Test case 2: mod = -3, target = 0
         mod = -3;
         target = 0;
         #100;
-        
+        $display("Time: %0t | random_num: %0d | modifer: %0d | final_num: %0d | target: %0d| hit: %0b", 
+                 $time, random_num, mod,final_num, target, hit);
         next = 1;
         #10;
         next = 0;
@@ -126,6 +101,8 @@ module testbench;
         mod = 0;
         target = 15;
         #100;
+        $display("Time: %0t | random_num: %0d | modifer: %0d | final_num: %0d | target: %0d| hit: %0b", 
+                 $time, random_num, mod,final_num, target, hit);
         next = 1;
         #10;
         next = 0;
@@ -133,18 +110,53 @@ module testbench;
         mod = 7;
         target = -5;
         #100;
+        $display("Time: %0t | random_num: %0d | modifer: %0d | final_num: %0d | target: %0d| hit: %0b", 
+                 $time, random_num, mod,final_num, target, hit);
+        next = 1;
+        #10;
+        next = 0;// Test case 4: mod = 7, target = -5
+        mod = 8;
+        target = -5;
+        #100;
+        $display("Time: %0t | random_num: %0d | modifer: %0d | final_num: %0d | target: %0d| hit: %0b", 
+                 $time, random_num, mod,final_num, target, hit);
+        next = 1;
+        #10;
+        next = 0;// Test case 4: mod = 7, target = -5
+        mod = 9;
+        target = -5;
+        #100;
+        $display("Time: %0t | random_num: %0d | modifer: %0d | final_num: %0d | target: %0d| hit: %0b", 
+                 $time, random_num, mod,final_num, target, hit);
+        next = 1;
+        #10;
+        next = 0;// Test case 4: mod = 7, target = -5
+        mod = 10;
+        target = -5;
+        #100;
+        $display("Time: %0t | random_num: %0d | modifer: %0d | final_num: %0d | target: %0d| hit: %0b", 
+                 $time, random_num, mod,final_num, target, hit);
         next = 1;
         #10;
         next = 0;
-        // End simulation
-        $finish;
+        end
     end
 
-    // Monitor outputs
     always @(posedge clk) begin
-        #5
-        $monitor("Time: %0t | random_num: %0d | modifer: %0d | final_num: %0d | target: %0d| hit: %0b", 
-                 $time, random_num, mod,final_num, target, hit);
+
+
+        if(write) begin
+            if (addr < 31) begin
+                data <= bits_mem[addr];
+                addr<=addr+1;
+                // $display("writing bits to moduke");
+            end else begin
+                reset = 0;
+                write = 0;
+            end
+        end
+
+        
     end
 
 endmodule

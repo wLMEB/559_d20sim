@@ -6,8 +6,11 @@ module top #(
     input logic clk, // Trigger for new random number
     input logic reset, 
     input logic next, // Update next PC 
+    input logic write, // For writing into the memory
     input logic signed [NUM_BITS-1:0] mod, // Signed modifier
     input logic signed [NUM_BITS-1:0] target, // Target number for comparison
+    input logic [4:0] data,
+    input logic [31:0] addr,
     output logic [4:0] random_num, // 5-bit random number (1 to 20)
     output logic signed [NUM_BITS-1:0] final_num, // Signed 8-bit output
     output logic hit // 1 if final_num >= target, 0 otherwise
@@ -34,9 +37,13 @@ module top #(
 
     // Instantiate the imem module
     imem #(
-        .NUM_GROUP(32)
+        .DATA_LENGTH(32)
     ) imem_inst (
-        .addr_i(pc), // Pass pc as the address input
+        .clk(clk),
+        .write(write),
+        .addr_o(pc), // Pass pc as the address input
+        .addr_i(addr),
+        .data_i(data),
         .data_o(value)
     );
 
@@ -101,14 +108,23 @@ end
 endmodule
 
 (* dont_touch = "true" *) module imem #(
-    parameter int NUM_GROUP = 32
+    parameter int DATA_LENGTH = 32
 ) (
+    input logic clk,
+    input logic write,
     input  logic [31:0] addr_i,
+    input  logic [31:0] addr_o,
+    input logic [4:0] data_i,
     output logic [4:0] data_o
 ); 
-   (* syn_preserve = 1, syn_keep = 1, dont_touch = "true" *) reg [4:0] RAM[0:NUM_GROUP-1];
-    assign data_o = RAM[addr_i % NUM_GROUP];
-    always @(posedge addr_i[0]) begin
-        RAM[0] <=  5'b00001;
+   (* syn_preserve = 1, syn_keep = 1, dont_touch = "true" *) reg [4:0] RAM[0:DATA_LENGTH-1];
+
+    always @(posedge clk) begin
+        if (write) begin
+            RAM[addr_i % DATA_LENGTH] <=data_i;
+        end 
+        else begin
+            data_o <= RAM[addr_o % DATA_LENGTH];
+        end
     end
 endmodule  
